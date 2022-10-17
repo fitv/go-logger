@@ -9,23 +9,26 @@ go get -u github.com/fitv/go-logger
 ```go
 package main
 
-import "github.com/fitv/go-logger"
+import (
+	"github.com/fitv/go-logger"
+)
 
 func main() {
-    fileLogger := logger.NewFileLogger(&logger.Option{
-        Path:  "/logs/app.log",
-        Daily: true,
-        Days:  7,
-    })
+	fileWriter := logger.NewFileWriter(&logger.Option{
+		Path:  "/app/web.log",
+		Daily: true,
+		Days:  7,
+	})
+	defer fileWriter.Close()
 
-    log := logger.New(fileLogger, logger.NewStdLogger())
-    log.SetLevel(logger.DebugLevel)
-    defer log.Close()
+	log := logger.New()
+	log.SetOut(fileWriter)
+	log.SetLevel(logger.DebugLevel)
 
-    log.Debug("debug")
-    log.Info("info")
-    log.Warn("warn")
-    log.Error("error")
-    log.Fatal("fatal")
+	log.Debug("debug")
+	log.Info("info")
+	log.Warn("warn")
+	log.Error("error")
+	log.Fatal("fatal")
 }
 ```

@@ -3,25 +3,13 @@ package logger
 import (
 	"fmt"
 	"io"
-	"log"
+	"os"
 	"strings"
 	"time"
 )
 
-// Logger is the logger wrapper.
-type Logger struct {
-	drivers    []Driver
-	level      Level
-	timeLayout string
-}
+var _ io.Writer = (*Logger)(nil)
 
-// Driver is the logger interface.
-type Driver interface {
-	io.Writer
-	Close() error
-}
-
-// Option is the option for logger.
 type Option struct {
 	// Path of the log file. eg: /logs/app.log
 	Path string
@@ -33,16 +21,24 @@ type Option struct {
 	Days int
 }
 
+type Logger struct {
+	out        io.Writer
+	level      Level
+	timeLayout string
+}
+
 // New creates a new Logger.
-func New(drivers ...Driver) *Logger {
-	if len(drivers) == 0 {
-		drivers = append(drivers, NewStdLogger())
-	}
+func New() *Logger {
 	return &Logger{
-		drivers:    drivers,
-		level:      DebugLevel,
+		out:        os.Stderr,
+		level:      InfoLevel,
 		timeLayout: "2006-01-02 15:04:05",
 	}
+}
+
+// SetOut sets the output writer.
+func (l *Logger) SetOut(out io.Writer) {
+	l.out = out
 }
 
 // SetLevel sets the logger level.
@@ -80,6 +76,10 @@ func (l *Logger) Fatal(args ...any) {
 	l.Log(FatalLevel, args...)
 }
 
+func (l *Logger) Write(p []byte) (n int, err error) {
+	return l.out.Write([]byte(l.format(InfoLevel, string(p))))
+}
+
 // Log writes a message to the log using the given level.
 func (l *Logger) Log(level Level, args ...any) {
 	// Skip if the level is below the logger level.
@@ -87,27 +87,19 @@ func (l *Logger) Log(level Level, args ...any) {
 		return
 	}
 
+	_, err := l.out.Write([]byte(l.format(level, args...)))
+	// when write log to drive failed, print to stderr
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "write log failed: %v\n", err)
+	}
+}
+
+// format returns a formatted log message.
+func (l *Logger) format(level Level, args ...any) string {
 	args = append([]interface{}{
 		time.Now().Format(l.timeLayout),
 		fmt.Sprintf("%s:", strings.ToUpper(level.String())),
 	}, args...)
 
-	for i := range l.drivers {
-		_, err := l.drivers[i].Write([]byte(fmt.Sprintln(args...)))
-		// when write log to drive failed, print to stdout
-		if err != nil {
-			log.Println(fmt.Errorf("write log failed: %w", err))
-		}
-	}
-}
-
-// Close closes the logger.
-func (l *Logger) Close() error {
-	var err error
-	for i := range l.drivers {
-		if e := l.drivers[i].Close(); e != nil {
-			err = e
-		}
-	}
-	return err
+	return fmt.Sprintln(args...)
 }

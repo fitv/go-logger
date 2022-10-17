@@ -2,6 +2,7 @@ package logger
 
 import (
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -10,10 +11,9 @@ import (
 	"github.com/fitv/go-logger/internal/util"
 )
 
-var _ Driver = (*FileLogger)(nil)
+var _ io.WriteCloser = (*FileWriter)(nil)
 
-// FileLogger is a file logger struct.
-type FileLogger struct {
+type FileWriter struct {
 	mux           sync.Mutex
 	file          *os.File
 	name          string
@@ -26,11 +26,11 @@ type FileLogger struct {
 	regexDateName *regexp.Regexp
 }
 
-// NewFileLogger creates a new FileLogger.
-func NewFileLogger(opt *Option) *FileLogger {
+// NewFileWriter creates a new FileWriter.
+func NewFileWriter(opt *Option) *FileWriter {
 	ext := filepath.Ext(opt.Path)
 
-	logger := &FileLogger{
+	writer := &FileWriter{
 		ext:   ext,
 		path:  opt.Path,
 		daily: opt.Daily,
@@ -38,19 +38,19 @@ func NewFileLogger(opt *Option) *FileLogger {
 		dir:   filepath.Dir(opt.Path),
 		name:  filepath.Base(opt.Path[:len(opt.Path)-len(ext)]),
 	}
-	if logger.daily {
-		logger.date = util.Today()
-		logger.regexDateName = regexp.MustCompile(fmt.Sprintf(
+	if writer.daily {
+		writer.date = util.Today()
+		writer.regexDateName = regexp.MustCompile(fmt.Sprintf(
 			`%s-(\d{4}-\d{2}-\d{2})%s`,
-			regexp.QuoteMeta(logger.name),
-			regexp.QuoteMeta(logger.ext),
+			regexp.QuoteMeta(writer.name),
+			regexp.QuoteMeta(writer.ext),
 		))
 	}
-	return logger
+	return writer
 }
 
-// WithFields adds fields to the logger.
-func (l *FileLogger) Write(p []byte) (n int, err error) {
+// Write writes the log message.
+func (l *FileWriter) Write(p []byte) (n int, err error) {
 	l.mux.Lock()
 	defer l.mux.Unlock()
 
@@ -77,14 +77,14 @@ func (l *FileLogger) Write(p []byte) (n int, err error) {
 }
 
 // Close closes the logger.
-func (l *FileLogger) Close() error {
+func (l *FileWriter) Close() error {
 	l.mux.Lock()
 	defer l.mux.Unlock()
 	return l.close()
 }
 
 // close closes the log file.
-func (l *FileLogger) close() error {
+func (l *FileWriter) close() error {
 	if l.file == nil {
 		return nil
 	}
@@ -94,7 +94,7 @@ func (l *FileLogger) close() error {
 }
 
 // openFile opens the log file.
-func (l *FileLogger) openFile() error {
+func (l *FileWriter) openFile() error {
 	file, err := os.OpenFile(l.filePath(), os.O_RDWR|os.O_CREATE|os.O_APPEND, 0644)
 	if err != nil {
 		return fmt.Errorf("error opening file: %w", err)
@@ -104,7 +104,7 @@ func (l *FileLogger) openFile() error {
 }
 
 // filePath returns the log file full path.
-func (l *FileLogger) filePath() string {
+func (l *FileWriter) filePath() string {
 	if l.daily {
 		return fmt.Sprintf("%s/%s-%s", l.dir, l.name, l.date+l.ext)
 	}
@@ -112,7 +112,7 @@ func (l *FileLogger) filePath() string {
 }
 
 // cleanOutdatedFiles deletes outdated log files.
-func (l *FileLogger) cleanOutdatedFiles() error {
+func (l *FileWriter) cleanOutdatedFiles() error {
 	if !(l.daily && l.days > 0) {
 		return nil
 	}

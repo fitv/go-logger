@@ -16,13 +16,14 @@ func TestFileLogger(t *testing.T) {
 	path := "/tmp/test.log"
 	defer os.Remove(path)
 
-	filedLogger := logger.NewFileLogger(&logger.Option{
+	fileWriter := logger.NewFileWriter(&logger.Option{
 		Path:  path,
 		Daily: false,
 	})
+	defer fileWriter.Close()
 
-	log := logger.New(filedLogger)
-	defer log.Close()
+	log := logger.New()
+	log.SetOut(fileWriter)
 	log.SetLevel(logger.DebugLevel)
 
 	log.Debug("debug")
@@ -44,14 +45,15 @@ func TestFileLogger(t *testing.T) {
 func TestFileLoggerDaily(t *testing.T) {
 	assert := assert.New(t)
 
-	fileLogger := logger.NewFileLogger(&logger.Option{
+	fileWriter := logger.NewFileWriter(&logger.Option{
 		Path:  "/tmp/test.log",
 		Daily: true,
 		Days:  3,
 	})
+	defer fileWriter.Close()
 
-	log := logger.New(fileLogger)
-	defer log.Close()
+	log := logger.New()
+	log.SetOut(fileWriter)
 	log.SetLevel(logger.WarnLevel)
 
 	log.Debug("debug")
