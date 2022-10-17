@@ -13,14 +13,14 @@ import "github.com/fitv/go-logger"
 
 func main() {
     fileLogger := logger.NewFileLogger(&logger.Option{
-        Path:  "/var/log/app.log",
+        Path:  "/logs/app.log",
         Daily: true,
         Days:  7,
     })
 
     log := logger.New(fileLogger, logger.NewStdLogger())
-    defer log.Close()
     log.SetLevel(logger.DebugLevel)
+    defer log.Close()
 
     log.Debug("debug")
     log.Info("info")
