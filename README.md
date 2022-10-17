@@ -13,10 +13,9 @@ import "github.com/fitv/go-logger"
 
 func main() {
     fileLogger := logger.NewFileLogger(&logger.Option{
-        Path:  "/var/log",
-        Name:  "app",
+        Path:  "/var/log/app.log",
         Daily: true,
-        Days:  15,
+        Days:  7,
     })
 
     log := logger.New(fileLogger, logger.NewStdLogger())

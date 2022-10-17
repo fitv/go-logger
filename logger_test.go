@@ -13,9 +13,11 @@ import (
 func TestFileLogger(t *testing.T) {
 	assert := assert.New(t)
 
+	path := "/tmp/test.log"
+	defer os.Remove(path)
+
 	filedLogger := logger.NewFileLogger(&logger.Option{
-		Path:  "/tmp",
-		Name:  "test",
+		Path:  path,
 		Daily: false,
 	})
 
@@ -29,13 +31,8 @@ func TestFileLogger(t *testing.T) {
 	log.Error("error")
 	log.Fatal("fatal")
 
-	logPath := "/tmp/test.log"
-	defer os.Remove(logPath)
-
-	bytes, err := os.ReadFile(logPath)
-	if err != nil {
-		t.Fatalf("read file error: %v", err)
-	}
+	bytes, err := os.ReadFile(path)
+	assert.NoError(err)
 
 	assert.Contains(string(bytes), "DEBUG: debug")
 	assert.Contains(string(bytes), "INFO: info")
@@ -48,9 +45,9 @@ func TestFileLoggerDaily(t *testing.T) {
 	assert := assert.New(t)
 
 	fileLogger := logger.NewFileLogger(&logger.Option{
-		Path:  "/tmp",
-		Name:  "test",
+		Path:  "/tmp/test.log",
 		Daily: true,
+		Days:  3,
 	})
 
 	log := logger.New(fileLogger)
@@ -68,9 +65,7 @@ func TestFileLoggerDaily(t *testing.T) {
 	defer os.Remove(logPath)
 
 	bytes, err := os.ReadFile(logPath)
-	if err != nil {
-		t.Fatalf("read file error: %v", err)
-	}
+	assert.NoError(err)
 
 	assert.NotContains(string(bytes), "DEBUG: debug")
 	assert.NotContains(string(bytes), "INFO: info")

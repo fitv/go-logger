@@ -23,11 +23,8 @@ type Driver interface {
 
 // Option is the option for logger.
 type Option struct {
-	// Path is the log file. eg: /var/log
+	// Path of the log file. eg: /logs/app.log
 	Path string
-
-	// Filename  of the log file. eg: web
-	Name string
 
 	// Whether to create a new file every day.
 	Daily bool

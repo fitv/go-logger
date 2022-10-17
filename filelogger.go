@@ -5,7 +5,6 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
-	"strings"
 	"sync"
 
 	"github.com/fitv/go-logger/internal/util"
@@ -18,6 +17,8 @@ type FileLogger struct {
 	mux           sync.Mutex
 	file          *os.File
 	name          string
+	ext           string
+	dir           string
 	path          string
 	date          string
 	daily         bool
@@ -27,15 +28,23 @@ type FileLogger struct {
 
 // NewFileLogger creates a new FileLogger.
 func NewFileLogger(opt *Option) *FileLogger {
+	ext := filepath.Ext(opt.Path)
+
 	logger := &FileLogger{
-		path:  strings.TrimRight(opt.Path, "/"),
-		name:  opt.Name,
+		ext:   ext,
+		path:  opt.Path,
 		daily: opt.Daily,
 		days:  opt.Days,
+		dir:   filepath.Dir(opt.Path),
+		name:  filepath.Base(opt.Path[:len(opt.Path)-len(ext)]),
 	}
 	if logger.daily {
 		logger.date = util.Today()
-		logger.regexDateName = regexp.MustCompile(fmt.Sprintf(`%s-(\d{4}-\d{2}-\d{2})\.log`, logger.name))
+		logger.regexDateName = regexp.MustCompile(fmt.Sprintf(
+			`%s-(\d{4}-\d{2}-\d{2})%s`,
+			regexp.QuoteMeta(logger.name),
+			regexp.QuoteMeta(logger.ext),
+		))
 	}
 	return logger
 }
@@ -97,9 +106,9 @@ func (l *FileLogger) openFile() error {
 // filePath returns the log file full path.
 func (l *FileLogger) filePath() string {
 	if l.daily {
-		return fmt.Sprintf("%s/%s-%s.log", l.path, l.name, l.date)
+		return fmt.Sprintf("%s/%s-%s", l.dir, l.name, l.date+l.ext)
 	}
-	return fmt.Sprintf("%s/%s.log", l.path, l.name)
+	return l.path
 }
 
 // cleanOutdatedFiles deletes outdated log files.
@@ -108,7 +117,7 @@ func (l *FileLogger) cleanOutdatedFiles() error {
 		return nil
 	}
 
-	dirEntries, err := os.ReadDir(l.path)
+	dirEntries, err := os.ReadDir(l.dir)
 	if err != nil {
 		return err
 	}
@@ -120,7 +129,7 @@ func (l *FileLogger) cleanOutdatedFiles() error {
 		if !(len(matches) > 1 && util.IsValidDate(matches[1]) && util.DiffDays(matches[1]) > l.days) {
 			continue
 		}
-		if err := os.Remove(filepath.Join(l.path, dirEntry.Name())); err != nil {
+		if err := os.Remove(filepath.Join(l.dir, dirEntry.Name())); err != nil {
 			return err
 		}
 	}
