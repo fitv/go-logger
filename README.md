@@ -29,7 +29,7 @@ func main() {
     log.Info("info")
     log.Warn("warn")
     log.Error("error")
-	log.Panic("panic")
+    log.Panic("panic")
     log.Fatal("fatal")
 }
 ```
