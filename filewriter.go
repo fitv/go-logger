@@ -3,6 +3,7 @@ package logger
 import (
 	"fmt"
 	"io"
+	"log"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -29,13 +30,18 @@ type FileWriter struct {
 // NewFileWriter creates a new FileWriter.
 func NewFileWriter(opt *Option) *FileWriter {
 	ext := filepath.Ext(opt.Path)
+	dir := filepath.Dir(opt.Path)
+
+	if err := os.MkdirAll(dir, 0755); err != nil {
+		log.Fatalf("failed to create log directory: %v", err)
+	}
 
 	writer := &FileWriter{
-		ext:   ext,
 		path:  opt.Path,
 		daily: opt.Daily,
 		days:  opt.Days,
-		dir:   filepath.Dir(opt.Path),
+		dir:   dir,
+		ext:   ext,
 		name:  filepath.Base(opt.Path[:len(opt.Path)-len(ext)]),
 	}
 	if writer.daily {
@@ -97,7 +103,7 @@ func (l *FileWriter) close() error {
 func (l *FileWriter) openFile() error {
 	file, err := os.OpenFile(l.filePath(), os.O_RDWR|os.O_CREATE|os.O_APPEND, 0644)
 	if err != nil {
-		return fmt.Errorf("error opening file: %w", err)
+		return fmt.Errorf("failed to open log file: %v", err)
 	}
 	l.file = file
 	return nil
