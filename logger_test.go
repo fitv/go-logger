@@ -31,6 +31,10 @@ func TestFileLogger(t *testing.T) {
 	log.Warn("warn")
 	log.Error("error")
 
+	assert.Panics(func() {
+		log.Panic("panic")
+	})
+
 	bytes, err := os.ReadFile(path)
 	assert.NoError(err)
 
@@ -38,6 +42,7 @@ func TestFileLogger(t *testing.T) {
 	assert.Contains(string(bytes), "INFO: info")
 	assert.Contains(string(bytes), "WARN: warn")
 	assert.Contains(string(bytes), "ERROR: error")
+	assert.Contains(string(bytes), "PANIC: panic")
 }
 
 func TestFileLoggerDaily(t *testing.T) {
@@ -59,6 +64,10 @@ func TestFileLoggerDaily(t *testing.T) {
 	log.Warn("warn")
 	log.Error("error")
 
+	assert.Panics(func() {
+		log.Panic("panic")
+	})
+
 	date := util.Today()
 	logPath := fmt.Sprintf("/tmp/test-%s.log", date)
 	defer os.Remove(logPath)
@@ -70,4 +79,5 @@ func TestFileLoggerDaily(t *testing.T) {
 	assert.NotContains(string(bytes), "INFO: info")
 	assert.Contains(string(bytes), "WARN: warn")
 	assert.Contains(string(bytes), "ERROR: error")
+	assert.Contains(string(bytes), "PANIC: panic")
 }
