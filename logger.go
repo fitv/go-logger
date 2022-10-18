@@ -96,7 +96,7 @@ func (l *Logger) Log(level Level, args ...any) {
 
 	_, err := l.out.Write(l.format(level, fmt.Sprint(args...)))
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "write log failed: %v\n", err)
+		fmt.Fprintf(os.Stderr, "failed to write log: %v\n", err)
 	}
 }
 
