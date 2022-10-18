@@ -103,7 +103,7 @@ func (l *FileWriter) close() error {
 func (l *FileWriter) openFile() error {
 	file, err := os.OpenFile(l.filePath(), os.O_RDWR|os.O_CREATE|os.O_APPEND, 0644)
 	if err != nil {
-		return fmt.Errorf("failed to open log file: %v", err)
+		return err
 	}
 	l.file = file
 	return nil
