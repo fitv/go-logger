@@ -33,7 +33,7 @@ func New() *Logger {
 	return &Logger{
 		out:        os.Stderr,
 		level:      InfoLevel,
-		timeLayout: "2006-01-02 15:04:05",
+		timeLayout: time.RFC3339,
 	}
 }
 
