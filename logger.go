@@ -1,6 +1,7 @@
 package logger
 
 import (
+	"bytes"
 	"fmt"
 	"io"
 	"os"
@@ -30,14 +31,14 @@ type Logger struct {
 // New creates a new Logger.
 func New() *Logger {
 	return &Logger{
-		out:        os.Stderr,
+		out:        os.Stdout,
 		level:      InfoLevel,
 		timeLayout: "2006-01-02 15:04:05",
 	}
 }
 
 // SetOut sets the output writer.
-func (l *Logger) SetOut(out io.Writer) {
+func (l *Logger) SetOutput(out io.Writer) {
 	l.out = out
 }
 
@@ -71,35 +72,45 @@ func (l *Logger) Error(args ...any) {
 	l.Log(ErrorLevel, args...)
 }
 
-// Fatal writes a message to the log using the FATAL level.
+// Panic writes a message to the log using the PANIC level. The process will panic after writing the message.
+func (l *Logger) Panic(args ...any) {
+	l.Log(PanicLevel, args...)
+	panic(fmt.Sprint(args...))
+}
+
+// Fatal writes a message to the log using the FATAL level. The process will exit with status set to 1.
 func (l *Logger) Fatal(args ...any) {
 	l.Log(FatalLevel, args...)
+	os.Exit(1)
 }
 
 func (l *Logger) Write(p []byte) (n int, err error) {
-	return l.out.Write([]byte(l.format(InfoLevel, string(p))))
+	return l.out.Write(l.format(InfoLevel, string(p)))
 }
 
 // Log writes a message to the log using the given level.
 func (l *Logger) Log(level Level, args ...any) {
-	// Skip if the level is below the logger level.
 	if level < l.level {
 		return
 	}
 
-	_, err := l.out.Write([]byte(l.format(level, args...)))
-	// when write log to drive failed, print to stderr
+	_, err := l.out.Write(l.format(level, fmt.Sprint(args...)))
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "write log failed: %v\n", err)
 	}
 }
 
 // format returns a formatted log message.
-func (l *Logger) format(level Level, args ...any) string {
-	args = append([]interface{}{
-		time.Now().Format(l.timeLayout),
-		fmt.Sprintf("%s:", strings.ToUpper(level.String())),
-	}, args...)
+func (l *Logger) format(level Level, msg string) []byte {
+	b := &bytes.Buffer{}
 
-	return fmt.Sprintln(args...)
+	b.WriteString(time.Now().Format(l.timeLayout))
+	b.WriteByte(' ')
+	b.WriteString(strings.ToUpper(level.String()))
+	b.WriteByte(':')
+	b.WriteByte(' ')
+	b.WriteString(msg)
+	b.WriteByte('\n')
+
+	return b.Bytes()
 }

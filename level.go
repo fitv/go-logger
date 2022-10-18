@@ -7,6 +7,7 @@ const (
 	InfoLevel
 	WarnLevel
 	ErrorLevel
+	PanicLevel
 	FatalLevel
 )
 
@@ -16,6 +17,7 @@ var LevelMap = map[Level]string{
 	InfoLevel:  "info",
 	WarnLevel:  "warn",
 	ErrorLevel: "error",
+	PanicLevel: "panic",
 	FatalLevel: "fatal",
 }
 

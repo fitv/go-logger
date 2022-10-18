@@ -23,14 +23,13 @@ func TestFileLogger(t *testing.T) {
 	defer fileWriter.Close()
 
 	log := logger.New()
-	log.SetOut(fileWriter)
+	log.SetOutput(fileWriter)
 	log.SetLevel(logger.DebugLevel)
 
 	log.Debug("debug")
 	log.Info("info")
 	log.Warn("warn")
 	log.Error("error")
-	log.Fatal("fatal")
 
 	bytes, err := os.ReadFile(path)
 	assert.NoError(err)
@@ -39,7 +38,6 @@ func TestFileLogger(t *testing.T) {
 	assert.Contains(string(bytes), "INFO: info")
 	assert.Contains(string(bytes), "WARN: warn")
 	assert.Contains(string(bytes), "ERROR: error")
-	assert.Contains(string(bytes), "FATAL: fatal")
 }
 
 func TestFileLoggerDaily(t *testing.T) {
@@ -53,14 +51,13 @@ func TestFileLoggerDaily(t *testing.T) {
 	defer fileWriter.Close()
 
 	log := logger.New()
-	log.SetOut(fileWriter)
+	log.SetOutput(fileWriter)
 	log.SetLevel(logger.WarnLevel)
 
 	log.Debug("debug")
 	log.Info("info")
 	log.Warn("warn")
 	log.Error("error")
-	log.Fatal("fatal")
 
 	date := util.Today()
 	logPath := fmt.Sprintf("/tmp/test-%s.log", date)
@@ -73,5 +70,4 @@ func TestFileLoggerDaily(t *testing.T) {
 	assert.NotContains(string(bytes), "INFO: info")
 	assert.Contains(string(bytes), "WARN: warn")
 	assert.Contains(string(bytes), "ERROR: error")
-	assert.Contains(string(bytes), "FATAL: fatal")
 }

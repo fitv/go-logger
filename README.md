@@ -22,13 +22,14 @@ func main() {
     defer fileWriter.Close()
 
     log := logger.New()
-    log.SetOut(fileWriter)
+    log.SetOutput(fileWriter)
     log.SetLevel(logger.DebugLevel)
 
     log.Debug("debug")
     log.Info("info")
     log.Warn("warn")
     log.Error("error")
+	log.Panic("panic")
     log.Fatal("fatal")
 }
 ```
