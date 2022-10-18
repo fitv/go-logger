@@ -31,13 +31,13 @@ type Logger struct {
 // New creates a new Logger.
 func New() *Logger {
 	return &Logger{
-		out:        os.Stdout,
+		out:        os.Stderr,
 		level:      InfoLevel,
 		timeLayout: "2006-01-02 15:04:05",
 	}
 }
 
-// SetOut sets the output writer.
+// SetOutput sets the output writer.
 func (l *Logger) SetOutput(out io.Writer) {
 	l.out = out
 }
@@ -109,7 +109,7 @@ func (l *Logger) format(level Level, msg string) []byte {
 	b.WriteString(strings.ToUpper(level.String()))
 	b.WriteByte(':')
 	b.WriteByte(' ')
-	b.WriteString(msg)
+	b.WriteString(strings.TrimSuffix(msg, "\n"))
 	b.WriteByte('\n')
 
 	return b.Bytes()
